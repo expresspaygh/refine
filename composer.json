@@ -1,1 +1,9 @@
-{}
+{
+  "autoload": {
+    "psr-4": {
+      "expresspay\\request_filter\\": [
+        "src/"
+      ]
+    }
+  }
+}
