@@ -162,32 +162,56 @@ class RequestFilter
   private function getFilterFlagsOptions($requestKey, &$requestValue = null): ?array
   {
     $filterOptions = NULL;
+
+    // user supplied filter options for this key
     if (array_key_exists($requestKey, $this->applicableOptions)) {
+      // but the filter options are empty
       if (empty($this->applicableOptions[$requestKey])) {
         $filterOptions = $this->getConstant($requestKey);
       } else {
+        // filter options are not empty so use them
         $filterOptions = $this->applicableOptions[$requestKey];
+
+        // user supplied option is a string so we get the filter options we
+        // have saved under that string
         if (!is_array($filterOptions) && !in_array($filterOptions, $this->nullifyValue) && !FilterRules::check($filterOptions)) {
           $filterOptions = $this->getConstant($filterOptions);
         }
+
+        // user supplied option is not a string, but they have nullify in the
+        // array and we don't have a custom filter to apply so we don't use a
+        // filter
         if (in_array($filterOptions, $this->nullifyValue) && !FilterRules::check($filterOptions)) {
           $filterOptions = NULL;
         }
+
+        // user supplied option is a string, it is not nullify and we have a
+        // custom filter rule so we apply that
         if (!is_array($filterOptions) && !in_array($filterOptions, $this->nullifyValue) && FilterRules::check($filterOptions)) {
           $requestValue = FilterRules::$filterOptions($requestValue);
           $filterOptions = $this->getConstant(gettype($requestValue));
         }
       }
     } else {
+      // user supplied no filter options for this key so we try to find the key
+      // in our filter constants.
       $getConstantKey = $this->getConstant($requestKey);
       if (!is_null($getConstantKey)) {
+        // we found it so we use that
         $filterOptions = $getConstantKey;
       } else {
+        // we didn't find anything
+
+        // if the request value is a string, we sanitize it according to our
+        // custom rules
         $reqValType = gettype($requestValue);
         if ($reqValType == 'string') $requestValue = FilterRules::clean_string($requestValue);
 
+        // then we look for some stored filter rules for the type of the
+        // request value
         $getConstantValue = $this->getConstant($reqValType);
         if (!is_null($getConstantValue)) {
+          // and use them if we find them
           $filterOptions = $getConstantValue;
         }
       }
