@@ -51,7 +51,7 @@ class Filter
    * @var array
    */
   private $filterResponse = array();
-  
+
   /**
    * __construct
    * Perform request filtering. Responses can be found on the constructed
@@ -78,11 +78,11 @@ class Filter
    * @todo document the format
    * @return array
    */
-  private function getFilterResponse(): ?array
+  public function getFilterResponse(): ?array
   {
     return $this->filterResponse;
   }
-  
+
   /**
    * getConstant
    *
@@ -129,7 +129,7 @@ class Filter
     ];
     return (array_key_exists($varType, $types)) ? $types[$varType] : NULL;
   }
-  
+
   /**
    * getResponse
    *

@@ -9,7 +9,7 @@ namespace Expay\Refine;
  */
 class Rules
 {
-    
+
   /**
    * check
    *
@@ -20,7 +20,7 @@ class Rules
   {
     return (!is_null($func)) ? method_exists(__CLASS__, $func) : false;
   }
-  
+
   /**
    * clean_string
    *
@@ -31,7 +31,7 @@ class Rules
   {
     return preg_replace("/[^A-Za-z0-9-_., ]/", "", $string);
   }
-  
+
   /**
    * clean_tags
    *
