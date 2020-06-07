@@ -1,9 +1,28 @@
 {
+  "name": "expresspay/exp-refine",
+  "description": "A request filtering and sanitization package with custom validations",
+  "type": "library",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Jeffery Osei",
+      "email": "jefferyosei@expresspaygh.com"
+    },
+    {
+      "name": "Ellis Adigvom",
+      "email": "ellisadigvom@expresspaygh.com"
+    }
+  ],
+  "minimum-stability": "stable",
   "autoload": {
     "psr-4": {
-      "expresspay\\request_filter\\": [
-        "src/"
-      ]
+      "Expay\\Refine\\": "src/"
     }
+  },
+  "require": {
+    "php": "^7.2"
+  },
+  "require-dev": {
+    "fzaninotto/faker": "^1.9"
   }
 }

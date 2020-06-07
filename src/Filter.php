@@ -1,6 +1,10 @@
 <?php
 
-namespace expresspay\request_filter;
+namespace Expay\Refine;
+
+require_once(__DIR__."/../vendor/autoload.php");
+
+use Expay\Refine\Rules;
 
 /**
  * Filter incoming HTTP requests
@@ -8,56 +12,59 @@ namespace expresspay\request_filter;
  * @todo document what filtering is done
  * @todo add phone number validation
  *
- * Example usage:
- *
- * ```php
- * $result = RequestFilter::check([
- *   "some_url" => "url",
- *   "some_email" => "email",
- *   "some_int" => "int",
- *   "some_bool" => "bool",
- *   "some_array" => "array",
- *   "some_ip" => "ip"
- * ], [
- *   "some_url" => "https://foobar.com",
- *   "some_email" => "someone@expresspaygh.com",
- *   "some_int" => 1,
- *   "some_bool" => "TRUE",
- *   "some_array" => [1, 2, 3],
- *   "some_ip" => "127.0.0.1",
- *   "some_string" => "<a href='/asdf'>foobar</a>"
- * ]);
- *
- * $result === [
- *   "status" => 0,
- *   "message" => "Success",
- *   "output" => [
- *     "some_url" => "https://foobar.com",
- *     "some_email" => "someone@expresspaygh.com",
- *     "some_int" => 1,
- *     "some_bool" => 1,
- *     "some_array" => [1, 2, 3],
- *     "some_ip" => "127.0.0.1",
- *     "some_string" => "a hrefasdffoobara"
- *   ]
- * ];
- * ```
  */
-class RequestFilter
+class Filter
 {
   /**
+   * requestVars
+   *
+   * @var string
+   */
+  private $requestVars = "";
+  /**
+   * applicableOptions
+   *
+   * @var string
+   */
+  private $applicableOptions = "";
+  /**
+   * finalFilterOutput
+   *
+   * @var array
+   */
+  private $finalFilterOutput = array();
+  /**
+   * nullifyValue
+   *
+   * @var array
+   */
+  private $nullifyValue = ["nullable", "null"];
+  /**
+   * filterArgsOptions
+   *
+   * @var array
+   */
+  private $filterArgsOptions = array();
+  /**
+   * filterResponse
+   *
+   * @var array
+   */
+  private $filterResponse = array();
+  
+  /**
+   * __construct
    * Perform request filtering. Responses can be found on the constructed
    * object.
    *
-   * @param array $request
    * @todo document the options
-   * @param array $options
+   * @param  mixed $options
+   * @param  mixed $request
+   * @return void
    */
   public function __construct(array $options = [], array $request = null)
   {
-    if (is_null($request))
-      $request = $_REQUEST;
-
+    if (is_null($request)) $request = $_REQUEST;
     $this->requestVars = $request;
     $this->applicableOptions = $options;
     $this->buildArgs();
@@ -66,39 +73,22 @@ class RequestFilter
   }
 
   /**
-   * Return the filter response
+   * getFilterResponse
    *
    * @todo document the format
    * @return array
    */
-  public function getFilterResponse(): ?array
+  private function getFilterResponse(): ?array
   {
     return $this->filterResponse;
   }
-
+  
   /**
-   * Helper static method to construct a filter and return the result.
+   * getConstant
    *
-   * @param array $request
-   * @todo document the options
-   * @param array $options
-   *
-   * @todo document the format
+   * @param  mixed $varType
    * @return array
    */
-  public static function check(array $options = [], array $request = null): array
-  {
-    $flt = new self($options, $request);
-    return $flt->getFilterResponse();
-  }
-
-  private $requestVars = NULL;
-  private $applicableOptions = NULL;
-  private $finalFilterOutput = array();
-  private $nullifyValue = ["nullable", "null"];
-  private $filterArgsOptions = array();
-  private $filterResponse = array();
-
   private function getConstant(string $varType): ?array
   {
     $types = [
@@ -131,7 +121,7 @@ class RequestFilter
       ],
       'regex' => [
         'filter' => FILTER_VALIDATE_REGEXP,
-        'options' => ['regexp' => '/[^a-z0-9\.]/i'] // uses regular string search replace
+        'options' => ['regexp' => '/[^a-z0-9\.]/i']
       ],
       'ip' => [
         'filter' => FILTER_VALIDATE_IP
@@ -139,7 +129,15 @@ class RequestFilter
     ];
     return (array_key_exists($varType, $types)) ? $types[$varType] : NULL;
   }
-
+  
+  /**
+   * getResponse
+   *
+   * @param  mixed $status
+   * @param  mixed $message
+   * @param  mixed $output
+   * @return array
+   */
   private function getResponse(int $status, string $message, array $output = null): array
   {
     $out = array();
@@ -150,14 +148,13 @@ class RequestFilter
   }
 
   /**
+   * getFilterFlagsOptions
    * Compute the filter flags for the given request key and value, and do any
-   * FilterRules processing on request values.
+   * Rules processing on request values.
    *
-   * @param string $requestKey
-   * @param array &$requestValue the referenced variable is modified according
-   *     to FilterRules
-   *
-   * @return ?array
+   * @param  mixed $requestKey
+   * @param  mixed $requestValue
+   * @return array
    */
   private function getFilterFlagsOptions($requestKey, &$requestValue = null): ?array
   {
@@ -174,21 +171,21 @@ class RequestFilter
 
         // user supplied option is a string so we get the filter options we
         // have saved under that string
-        if (!is_array($filterOptions) && !in_array($filterOptions, $this->nullifyValue) && !FilterRules::check($filterOptions)) {
+        if (!is_array($filterOptions) && !in_array($filterOptions, $this->nullifyValue) && !Rules::check($filterOptions)) {
           $filterOptions = $this->getConstant($filterOptions);
         }
 
         // user supplied option is not a string, but they have nullify in the
         // array and we don't have a custom filter to apply so we don't use a
         // filter
-        if (in_array($filterOptions, $this->nullifyValue) && !FilterRules::check($filterOptions)) {
+        if (in_array($filterOptions, $this->nullifyValue) && !Rules::check($filterOptions)) {
           $filterOptions = NULL;
         }
 
         // user supplied option is a string, it is not nullify and we have a
         // custom filter rule so we apply that
-        if (!is_array($filterOptions) && !in_array($filterOptions, $this->nullifyValue) && FilterRules::check($filterOptions)) {
-          $requestValue = FilterRules::$filterOptions($requestValue);
+        if (!is_array($filterOptions) && !in_array($filterOptions, $this->nullifyValue) && Rules::check($filterOptions)) {
+          $requestValue = Rules::$filterOptions($requestValue);
           $filterOptions = $this->getConstant(gettype($requestValue));
         }
       }
@@ -205,7 +202,7 @@ class RequestFilter
         // if the request value is a string, we sanitize it according to our
         // custom rules
         $reqValType = gettype($requestValue);
-        if ($reqValType == 'string') $requestValue = FilterRules::clean_string($requestValue);
+        if ($reqValType == 'string') $requestValue = Rules::clean_string($requestValue);
 
         // then we look for some stored filter rules for the type of the
         // request value
@@ -220,8 +217,11 @@ class RequestFilter
   }
 
   /**
+   * buildArgs
    * Compute the filter args for all keys and values in the request, update
-   * the stored request with the FilterRules processed result.
+   * the stored request with the Rules processed result.
+   *
+   * @return int
    */
   private function buildArgs(): int
   {
@@ -236,9 +236,11 @@ class RequestFilter
   }
 
   /**
+   * run
    * Run the php `filter_var_array` function and store the results.
-   *
    * The response is stored on the `finalFilterOutput` property
+   *
+   * @return int
    */
   private function run(): int
   {
@@ -247,9 +249,11 @@ class RequestFilter
   }
 
   /**
+   * response
    * Check the filtered output and generate and store a success/error response.
-   *
    * The response is stored on the `filterResponse` property
+   *
+   * @return int
    */
   private function response(): int
   {
@@ -271,8 +275,20 @@ class RequestFilter
     }
     return 0;
   }
-}
 
-// Local Variables:
-// c-basic-offset: 2
-// End:
+  /**
+   * Helper static method to construct a filter and return the result.
+   *
+   * @param array $request
+   * @todo document the options
+   * @param array $options
+   *
+   * @todo document the format
+   * @return array
+   */
+  public static function check(array $options = [], array $request = null): array
+  {
+    $flt = new self($options, $request);
+    return $flt->getFilterResponse();
+  }
+}
