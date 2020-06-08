@@ -4,7 +4,7 @@ namespace Expay\Refine;
 
 require_once(__DIR__."/../vendor/autoload.php");
 
-use Expay\Refine\Rules;
+use Expay\Refine\Rules\Rule;
 
 /**
  * Filter incoming HTTP requests
@@ -16,17 +16,18 @@ use Expay\Refine\Rules;
 class Filter
 {
   /**
-   * requestVars
+   * requestVars: The request coming in as passed to the class constructor or to check
    *
-   * @var string
+   * @var array
    */
-  private $requestVars = "";
+  private $requestVars;
+
   /**
    * applicableOptions
    *
-   * @var string
+   * @var array
    */
-  private $applicableOptions = "";
+  private $applicableOptions = [];
   /**
    * finalFilterOutput
    *
@@ -84,14 +85,60 @@ class Filter
   }
 
   /**
-   * getConstant
+   * Custom added filter rules
    *
-   * @param  mixed $varType
+   * @var Rule[]
+   */
+  private static $customFilterRules = [];
+
+  /**
+   * Custom added filter types
+   *
+   * @var array[]
+   */
+  private static $customFilterTypes = [];
+
+  /**
+   * Add a filter type
+   *
+   * @param string $name
+   * @param mixed $type
+   */
+  public static function addType(string $name, $type) {
+    self::$customFilterTypes[$name] = $type;
+  }
+
+  /**
+   * Add a filter rule
+   *
+   * @param string $name
+   * @param Rule $rule
+   */
+  public static function addRule(string $name, Rule $rule) {
+    self::$customFilterRules[$name] = $rule;
+  }
+
+  /**
+   * filterRules: Return the configured filter rules
+   *
+   * @return Rule[]
+   */
+  private static function getFilterRules(): array
+  {
+    return array_merge([
+      "string" => [new Rules\CleanString],
+    ], self::$customFilterRules);
+  }
+
+  /**
+   * filterTypes
+   *
+   *
    * @return array
    */
-  private function getConstant(string $varType): ?array
+  private static function getFilterTypes(): array
   {
-    $types = [
+    return array_merge([
       'bool' => [
         'filter' => FILTER_VALIDATE_BOOLEAN
       ],
@@ -126,7 +173,18 @@ class Filter
       'ip' => [
         'filter' => FILTER_VALIDATE_IP
       ]
-    ];
+    ], self::$customFilterTypes);
+  }
+
+  /**
+   * getConstant
+   *
+   * @param  mixed $varType
+   * @return array
+   */
+  private function getConstant(string $varType): ?array
+  {
+    $types = self::getFilterTypes();
     return (array_key_exists($varType, $types)) ? $types[$varType] : NULL;
   }
 
@@ -171,22 +229,14 @@ class Filter
 
         // user supplied option is a string so we get the filter options we
         // have saved under that string
-        if (!is_array($filterOptions) && !in_array($filterOptions, $this->nullifyValue) && !Rules::check($filterOptions)) {
+        if (!is_array($filterOptions) && !in_array($filterOptions, $this->nullifyValue)) {
           $filterOptions = $this->getConstant($filterOptions);
         }
 
         // user supplied option is not a string, but they have nullify in the
         // array and we don't have a custom filter to apply so we don't use a
-        // filter
-        if (in_array($filterOptions, $this->nullifyValue) && !Rules::check($filterOptions)) {
+        if (in_array($filterOptions, $this->nullifyValue)) {
           $filterOptions = NULL;
-        }
-
-        // user supplied option is a string, it is not nullify and we have a
-        // custom filter rule so we apply that
-        if (!is_array($filterOptions) && !in_array($filterOptions, $this->nullifyValue) && Rules::check($filterOptions)) {
-          $requestValue = Rules::$filterOptions($requestValue);
-          $filterOptions = $this->getConstant(gettype($requestValue));
         }
       }
     } else {
@@ -197,15 +247,9 @@ class Filter
         // we found it so we use that
         $filterOptions = $getConstantKey;
       } else {
-        // we didn't find anything
-
-        // if the request value is a string, we sanitize it according to our
-        // custom rules
+        // we didn't find anything. then we look for some stored filter rules
+        // for the type of the request value
         $reqValType = gettype($requestValue);
-        if ($reqValType == 'string') $requestValue = Rules::clean_string($requestValue);
-
-        // then we look for some stored filter rules for the type of the
-        // request value
         $getConstantValue = $this->getConstant($reqValType);
         if (!is_null($getConstantValue)) {
           // and use them if we find them
@@ -222,6 +266,7 @@ class Filter
    * the stored request with the Rules processed result.
    *
    * @return int
+   * @todo remove the "update stored request" part
    */
   private function buildArgs(): int
   {
@@ -244,6 +289,24 @@ class Filter
    */
   private function run(): int
   {
+    foreach ($this->requestVars as $key => $value) {
+      $type = gettype($value);
+      $filterRules = $this->getFilterRules();
+
+      // get filter rules for this key value pair
+      $rules = (in_array($key, $filterRules)
+                ? $filterRules[$key]
+                : (in_array($type, $filterRules)
+                   ? $filterRules[$type]
+                   : null));
+
+      // run filter rules
+      if (!empty($rules))
+        foreach ($rules as $rule) {
+          $this->requestVars[$key] = $rule->apply($value);
+        }
+    }
+
     $this->finalFilterOutput = filter_var_array($this->requestVars, $this->filterArgsOptions);
     return 0;
   }
