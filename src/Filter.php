@@ -60,11 +60,17 @@ class Filter
    * @param  mixed $request
    * @return void
    */
-  public function __construct(array $options = [], array $request = null)
+  public function __construct(
+    array $options = [],
+    array $request = null,
+    array $customTypes = [],
+    array $customRules = [])
   {
     if (is_null($request)) $request = $_REQUEST;
     $this->requestVars = $request;
     $this->applicableOptions = $options;
+    $this->customFilterTypes = array_merge($this->customFilterTypes, $customTypes);
+    $this->customFilterRules = array_merge($this->customFilterRules, $customRules);
     $this->buildArgs();
     $this->run();
     $this->response();
@@ -86,25 +92,26 @@ class Filter
    *
    * @var Rule[]
    */
-  private static $customFilterRules = [];
+  private $customFilterRules = [];
 
   /**
    * Custom added filter types
    *
    * @var array[]
    */
+  private $customFilterTypes = [];
 
   /**
    * getFilterRules: Return the configured filter rules
    *
    * @return Rule[]
    */
-  private static function getFilterRules(): array
+  private function getFilterRules(): array
   {
     return array_merge([
       "string" => [new Rules\CleanTags],
       "bool" => [new Rules\Boolean]
-    ], self::$customFilterRules);
+    ], $this->customFilterRules);
   }
 
   /**
@@ -150,7 +157,7 @@ class Filter
       'ip' => [
         'filter' => FILTER_VALIDATE_IP
       ]
-    ], self::$customFilterTypes);
+    ], $this->customFilterTypes);
     return (array_key_exists($varType, $types)) ? $types[$varType] : NULL;
   }
 
@@ -281,11 +288,12 @@ class Filter
       else $options = [];
 
       // run filter rules
-      if (!empty($rules))
+      if (!empty($rules)) {
         foreach ($rules as $rule) {
           $value = $rule->apply($value);
         }
-
+      }
+      
       // run php filters
       if (!empty($options))
       {
@@ -350,9 +358,13 @@ class Filter
    * @todo document the format
    * @return array
    */
-  public static function check(array $options = [], array $request = null): array
+  public static function check(
+    array $options = [],
+    array $request = null,
+    array $customTypes = [],
+    array $customRules = []): array
   {
-    $flt = new self($options, $request);
+    $flt = new self($options, $request, $customTypes, $customRules);
     return $flt->getFilterResponse();
   }
 }

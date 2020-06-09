@@ -1,6 +1,7 @@
 <?php
 
 use Expay\Refine\Filter;
+use Expay\Refine\Rules;
 use PHPUnit\Framework\TestCase;
 
 class FilterTest extends TestCase
@@ -39,7 +40,7 @@ class FilterTest extends TestCase
    */
   public function testBooleanHandling($input, $output)
   {
-    $rslt = Filter::check(["bool_field" => "bool"], $input);
+    $rslt = Filter::check(["bool_field" => "bool"], $input, [], ["bool" => [new Rules\Boolean(null)]]);
     $this->assertEquals($this->response($output), $rslt);
   }
 
@@ -54,6 +55,32 @@ class FilterTest extends TestCase
       [["bool_field" => false], ["bool_field" => false]],
       [["bool_field" => 1], ["bool_field" => true]],
       [["bool_field" => 0], ["bool_field" => false]],
+    ];
+  }
+
+  /**
+   * Check that booleans are handled in the expressPay way (string of TRUE and
+   * FALSE)
+   *
+   * @dataProvider stringBooleanHandlingProvider
+   */
+  public function testStringBooleanHandling($input, $output)
+  {
+    $rslt = Filter::check(["bool_field" => "bool"], $input, [], ["bool" => [new Rules\Boolean("upper")]]);
+    $this->assertEquals($this->response($output), $rslt);
+  }
+
+  public function stringBooleanHandlingProvider()
+  {
+    return [
+      [["bool_field" => "TRUE"], ["bool_field" => "TRUE"]],
+      [["bool_field" => "FALSE"], ["bool_field" => "FALSE"]],
+      [["bool_field" => 'true'], ["bool_field" => "TRUE"]],
+      [["bool_field" => 'false'], ["bool_field" => "FALSE"]],
+      [["bool_field" => true], ["bool_field" => "TRUE"]],
+      [["bool_field" => false], ["bool_field" => "FALSE"]],
+      [["bool_field" => 1], ["bool_field" => "TRUE"]],
+      [["bool_field" => 0], ["bool_field" => "FALSE"]],
     ];
   }
 
