@@ -1,5 +1,5 @@
 {
-  "name": "expresspay/exp-refine",
+  "name": "expresspaygh/exp-refine",
   "description": "A request filtering and sanitization package with custom validations",
   "type": "library",
   "license": "MIT",
