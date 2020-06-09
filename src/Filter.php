@@ -1,9 +1,6 @@
 <?php
 
 namespace Expay\Refine;
-
-require_once(__DIR__."/../vendor/autoload.php");
-
 use Expay\Refine\Rules\Rule;
 
 /**
