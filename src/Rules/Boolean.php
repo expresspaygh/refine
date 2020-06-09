@@ -2,7 +2,7 @@
 
 namespace Expay\Refine\Rules;
 
-class BooleanRule
+class Boolean
 {
   /**
    * Process a boolean value
@@ -11,6 +11,9 @@ class BooleanRule
    * @return mixed the processed value
    */
   public function apply($value) {
-    throw new \Exception("Unimplemented");
+    if (in_array($value, [true, 1, "TRUE", "true"], true))
+      return true;
+    else if (in_array($value, [false, 0, "FALSE", "false"], true))
+      return false;
   }
 }

@@ -127,6 +127,7 @@ class Filter
   {
     return array_merge([
       "string" => [new Rules\CleanTags],
+      "bool" => [new Rules\Boolean]
     ], self::$customFilterRules);
   }
 
@@ -140,7 +141,7 @@ class Filter
   {
     $types = array_merge([
       'bool' => [
-        'filter' => FILTER_VALIDATE_BOOLEAN
+        'filter' => FILTER_DEFAULT
       ],
       'string' => [
         'filter' => FILTER_SANITIZE_STRING,
@@ -283,9 +284,14 @@ class Filter
     foreach ($this->requestVars as $key => $value) {
       $type = gettype($value);
       $filterRules = $this->getFilterRules();
+      $applicableOption = array_key_exists($key, $this->applicableOptions)
+                        ? $this->applicableOptions[$key]
+                        : null;
 
       // get filter rules for this key value pair
-      if (array_key_exists($key, $filterRules))
+      if (array_key_exists($applicableOption, $filterRules))
+        $rules = $filterRules[$applicableOption];
+      else if (array_key_exists($key, $filterRules))
         $rules = $filterRules[$key];
       else if (array_key_exists($type, $filterRules))
         $rules = $filterRules[$type];

@@ -39,21 +39,21 @@ class FilterTest extends TestCase
    */
   public function testBooleanHandling($input, $output)
   {
-    $rslt = Filter::check($this->response(["some_bool" => "bool"]), $input);
-    $this->assertEquals($output, $rslt["output"]);
+    $rslt = Filter::check(["bool_field" => "bool"], $input);
+    $this->assertEquals($this->response($output), $rslt);
   }
 
   public function booleanHandlingProvider()
   {
     return [
-      [["bool_field" => "TRUE"], ["bool_field" => "TRUE"]],
-      [["bool_field" => "FALSE"], ["bool_field" => "FALSE"]],
-      [["bool_field" => 'true'], ["bool_field" => "TRUE"]],
-      [["bool_field" => 'false'], ["bool_field" => "FALSE"]],
-      [["bool_field" => true], ["bool_field" => "TRUE"]],
-      [["bool_field" => false], ["bool_field" => "FALSE"]],
-      [["bool_field" => 1], ["bool_field" => "TRUE"]],
-      [["bool_field" => 0], ["bool_field" => "FALSE"]],
+      [["bool_field" => "TRUE"], ["bool_field" => true]],
+      [["bool_field" => "FALSE"], ["bool_field" => false]],
+      [["bool_field" => 'true'], ["bool_field" => true]],
+      [["bool_field" => 'false'], ["bool_field" => false]],
+      [["bool_field" => true], ["bool_field" => true]],
+      [["bool_field" => false], ["bool_field" => false]],
+      [["bool_field" => 1], ["bool_field" => true]],
+      [["bool_field" => 0], ["bool_field" => false]],
     ];
   }
 
