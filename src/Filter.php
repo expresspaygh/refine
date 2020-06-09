@@ -106,8 +106,8 @@ class Filter
       return $this->filterRules[$fieldType];
     else if (array_key_exists($key, $this->filterRules))
       return $this->filterRules[$key];
-    else
-      return [];
+
+    return null;
   }
 
   /**

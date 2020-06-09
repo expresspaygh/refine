@@ -170,4 +170,14 @@ class FilterTest extends TestCase
           ->check();
     $this->assertEquals($this->response(["field" => [1, 2, 3]]), $rslt);
   }
+
+  public function testEmailFilter() {
+    $rslt = (new Filter)->check(["email" => "test@gmail.com"]);
+    $this->assertEquals($this->response(["email" => "test@gmail.com"]), $rslt);
+  }
+
+  public function testIntFilter() {
+    $rslt = (new Filter)->check(["int" => 1]);
+    $this->assertEquals($this->response(["int" =>  1]), $rslt);
+  }
 }
