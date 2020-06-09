@@ -119,26 +119,26 @@ class Filter
   }
 
   /**
-   * filterRules: Return the configured filter rules
+   * getFilterRules: Return the configured filter rules
    *
    * @return Rule[]
    */
   private static function getFilterRules(): array
   {
     return array_merge([
-      "string" => [new Rules\CleanString],
+      "string" => [new Rules\CleanTags],
     ], self::$customFilterRules);
   }
 
   /**
-   * filterTypes
+   * getConstant
    *
-   *
+   * @param  mixed $varType
    * @return array
    */
-  private static function getFilterTypes(): array
+  private function getConstant(string $varType): ?array
   {
-    return array_merge([
+    $types = array_merge([
       'bool' => [
         'filter' => FILTER_VALIDATE_BOOLEAN
       ],
@@ -174,17 +174,6 @@ class Filter
         'filter' => FILTER_VALIDATE_IP
       ]
     ], self::$customFilterTypes);
-  }
-
-  /**
-   * getConstant
-   *
-   * @param  mixed $varType
-   * @return array
-   */
-  private function getConstant(string $varType): ?array
-  {
-    $types = self::getFilterTypes();
     return (array_key_exists($varType, $types)) ? $types[$varType] : NULL;
   }
 
@@ -289,25 +278,52 @@ class Filter
    */
   private function run(): int
   {
+    $output = [];
+
     foreach ($this->requestVars as $key => $value) {
       $type = gettype($value);
       $filterRules = $this->getFilterRules();
 
       // get filter rules for this key value pair
-      $rules = (in_array($key, $filterRules)
-                ? $filterRules[$key]
-                : (in_array($type, $filterRules)
-                   ? $filterRules[$type]
-                   : null));
+      if (array_key_exists($key, $filterRules))
+        $rules = $filterRules[$key];
+      else if (array_key_exists($type, $filterRules))
+        $rules = $filterRules[$type];
+      else $rules = [];
+
+      // get filter optionss for this key value pair
+      if (array_key_exists($key, $this->filterArgsOptions))
+        $options = $this->filterArgsOptions[$key];
+      else if (array_key_exists($type, $this->filterArgsOptions))
+        $options = $this->filterArgsOptions[$type];
+      else $options = [];
 
       // run filter rules
       if (!empty($rules))
         foreach ($rules as $rule) {
-          $this->requestVars[$key] = $rule->apply($value);
+          $value = $rule->apply($value);
         }
+
+      // run php filters
+      if (!empty($options))
+      {
+        if (array_key_exists("filter", $options))
+          $filter = $options["filter"];
+        else
+          $filter = FILTER_DEFAULT;
+
+        $flags = [];
+        if (array_key_exists("flags", $options))
+          $flags["flags"] = $options["flags"];
+        if (array_key_exists("options", $options))
+          $flags = array_merge($flags, $options["options"]);
+
+        $value = filter_var($value, $filter, $flags);
+        $output[$key] = $value;
+      }
     }
 
-    $this->finalFilterOutput = filter_var_array($this->requestVars, $this->filterArgsOptions);
+    $this->finalFilterOutput = $output;
     return 0;
   }
 
