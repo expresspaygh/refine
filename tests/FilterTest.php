@@ -45,7 +45,7 @@ class FilterTest extends TestCase
   {
     $rslt = (new Filter)
           ->addField("bool_field", "bool")
-          ->addRule("bool", new Rules\Boolean())
+          ->replaceRules("bool", [new Rules\Boolean()])
           ->check($input);
     $this->assertEquals($this->response($output), $rslt);
   }
@@ -74,7 +74,7 @@ class FilterTest extends TestCase
   {
     $rslt = (new Filter)
           ->addField("bool_field", "bool")
-          ->addRule("bool", new Rules\Boolean("upper"))
+          ->replaceRules("bool", [new Rules\Boolean("upper")])
           ->check($input);
     $this->assertEquals($this->response($output), $rslt);
   }
