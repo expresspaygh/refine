@@ -93,27 +93,6 @@ class Filter
    *
    * @var array[]
    */
-  private static $customFilterTypes = [];
-
-  /**
-   * Add a filter type
-   *
-   * @param string $name
-   * @param mixed $type
-   */
-  public static function addType(string $name, $type) {
-    self::$customFilterTypes[$name] = $type;
-  }
-
-  /**
-   * Add a filter rule
-   *
-   * @param string $name
-   * @param Rule $rule
-   */
-  public static function addRule(string $name, Rule $rule) {
-    self::$customFilterRules[$name] = $rule;
-  }
 
   /**
    * getFilterRules: Return the configured filter rules
