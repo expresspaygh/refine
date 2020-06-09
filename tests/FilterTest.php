@@ -24,12 +24,15 @@ class FilterTest extends TestCase
    */
   public function testSmoke()
   {
-    $flt = new Filter(["string_field" => "string"], ["string_field" => "asdf"]);
+    $resp = (new Filter)
+      ->addField("string_field", "string")
+      ->check(["string_field" => "asdf"]);
+
     $this->assertEquals([
       "status" => 0,
       "message" => "Success",
       "output" => ["string_field" => "asdf"]
-    ], $flt->getFilterResponse());
+    ], $resp);
   }
 
   /**
@@ -40,7 +43,10 @@ class FilterTest extends TestCase
    */
   public function testBooleanHandling($input, $output)
   {
-    $rslt = Filter::check(["bool_field" => "bool"], $input, [], ["bool" => [new Rules\Boolean(null)]]);
+    $rslt = (new Filter)
+          ->addField("bool_field", "bool")
+          ->addRule("bool", new Rules\Boolean())
+          ->check($input);
     $this->assertEquals($this->response($output), $rslt);
   }
 
@@ -66,7 +72,10 @@ class FilterTest extends TestCase
    */
   public function testStringBooleanHandling($input, $output)
   {
-    $rslt = Filter::check(["bool_field" => "bool"], $input, [], ["bool" => [new Rules\Boolean("upper")]]);
+    $rslt = (new Filter)
+          ->addField("bool_field", "bool")
+          ->addRule("bool", new Rules\Boolean("upper"))
+          ->check($input);
     $this->assertEquals($this->response($output), $rslt);
   }
 
@@ -90,8 +99,10 @@ class FilterTest extends TestCase
    */
   public function testFilterNotFoundError()
   {
-    $rslt = Filter::check(["field" => "404-not-found"], ["field" => "asdf"]);
-    $this->assertEmpty($rslt);
+    $rslt = (new Filter)
+          ->addField("field", "asdf")
+          ->check(["field" => "404-not-found"]);
+    $this->assertEquals($this->response([]), $rslt);
   }
 
   /**
@@ -99,8 +110,8 @@ class FilterTest extends TestCase
    */
   public function testFilterNotProvided()
   {
-    $rslt = Filter::check(["field" => "404-not-found"], []);
-    $this->assertEmpty($rslt);
+    $rslt = (new Filter)->check(["field" => "404-not-found"]);
+    $this->assertEquals($this->response([]), $rslt);
   }
 
   /**
@@ -108,8 +119,10 @@ class FilterTest extends TestCase
    */
   public function testNullifyHandling()
   {
-    $rslt = Filter::check(["field" => "null"], ["field" => "asdf"]);
-    $this->assertEmpty($rslt);
+    $rslt = (new Filter)
+          ->addField("field", "null")
+          ->check(["field" => "asdf"]);
+    $this->assertEquals($this->response([]), $rslt);
   }
 
   /**
@@ -118,7 +131,7 @@ class FilterTest extends TestCase
    */
   public function testDefaultFilterOptions()
   {
-    $rslt = Filter::check([], ["string" => "<a>asdf</a>"]);
+    $rslt = (new Filter)->check(["string" => "<a>asdf</a>"]);
     $this->assertEquals($this->response(["string" => "asdf"]), $rslt);
   }
 
@@ -127,7 +140,9 @@ class FilterTest extends TestCase
    */
   public function testStringFilterOptions()
   {
-    $rslt = Filter::check(["field" => "string"], ["field" => "<a>asdf</a>"]);
+    $rslt = (new Filter)
+          ->addField("field", "string")
+          ->check(["field" => "<a>asdf</a>"]);
     $this->assertEquals($this->response(["field" => "asdf"]), $rslt);
   }
 
@@ -136,7 +151,9 @@ class FilterTest extends TestCase
    */
   public function testArrayFilterOptions()
   {
-    $rslt = Filter::check(["field" => "array"], ["field" => [1, 2, 3]]);
+    $rslt = (new Filter)
+          ->addField("field", "array")
+          ->check(["field" =>[1, 2, 3]]);
     $this->assertEquals($this->response(["field" => [1, 2, 3]]), $rslt);
   }
 
@@ -148,7 +165,9 @@ class FilterTest extends TestCase
   {
     global $_REQUEST;
     $_REQUEST = ["field" => [1, 2, 3]];
-    $rslt = Filter::check(["field" => "array"], $_REQUEST);
+    $rslt = (new Filter)
+          ->addField("field", "array")
+          ->check();
     $this->assertEquals($this->response(["field" => [1, 2, 3]]), $rslt);
   }
 }
