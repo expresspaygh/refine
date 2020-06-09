@@ -2,7 +2,7 @@
 
 namespace Expay\Refine\Rules;
 
-class Boolean
+class Boolean extends Rule
 {
   /**
    * Process a boolean value

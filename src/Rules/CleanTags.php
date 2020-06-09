@@ -2,7 +2,7 @@
 
 namespace Expay\Refine\Rules;
 
-class CleanTags
+class CleanTags extends Rule
 {
   /**
    * Remove html tags from the given string
@@ -10,7 +10,7 @@ class CleanTags
    * @param mixed $value the request value
    * @return mixed the processed value
    */
-  public function apply(string $value): string {
+  public function apply($value): string {
     return strip_tags($value);
   }
 }
