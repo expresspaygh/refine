@@ -343,7 +343,10 @@ class Filter
       $failures = array();
       $passed = array();
       foreach ((array) $this->finalFilterOutput as $key => $value) {
-        if (empty($value)) {
+        // workaroud for false booleans being identical to an error value
+        $isBool = array_key_exists($key, $this->applicableOptions) && $this->applicableOptions[$key] === "bool";
+
+        if ($value === false && !$isBool) {
           $failures[$key] = "$key is not valid, kindly check and try again";
         } else {
           $passed[$key] = $value;
