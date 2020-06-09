@@ -8,6 +8,10 @@ run-tests:
 	@echo "=============Run all test cases============"
 	cd tests && php FilterRun filter_check
 
+## run-tests: Run PHPUnit tests
+phpunit:
+	composer run test
+
 ## help: Command to view help
 help: Makefile
 	@echo
