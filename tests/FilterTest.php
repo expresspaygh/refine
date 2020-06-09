@@ -68,6 +68,15 @@ class FilterTest extends TestCase
   }
 
   /**
+   * Checks what happens when we don't find a php filter for something
+   */
+  public function testFilterNotProvided()
+  {
+    $rslt = Filter::check(["field" => "404-not-found"], []);
+    $this->assertEmpty($rslt);
+  }
+
+  /**
    * Ensure that nullify fields are handled correctly
    */
   public function testNullifyHandling()
