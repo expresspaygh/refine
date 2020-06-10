@@ -180,4 +180,13 @@ class FilterTest extends TestCase
     $rslt = (new Filter)->check(["int" => 1]);
     $this->assertEquals($this->response(["int" =>  1]), $rslt);
   }
+
+  public function testRequired() {
+    $rslt = (new Filter)->addField("field", [new Rules\Required])->check([]);
+    $this->assertEquals([
+      'status' => 2,
+      'message' => 'Bad Request, kindly check and try again',
+      'output' => ['field' => "Field 'field' is required"]
+    ], $rslt);
+  }
 }

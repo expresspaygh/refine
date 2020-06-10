@@ -20,7 +20,7 @@ class PHPFilter extends Rule
    * @param mixed $value the request value
    * @return mixed the processed value
    */
-  public function apply($value)
+  public function apply($value, string $key, array $request)
   {
     return filter_var_array(["field" => $value], ["field" => $this->definition])["field"];
   }

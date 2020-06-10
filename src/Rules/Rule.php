@@ -13,7 +13,7 @@ abstract class Rule
    * @param mixed $value the request value
    * @return mixed the processed value
    */
-  public function apply($value) {
+  public function apply($value, string $key, array $request) {
     return $value;
   }
 }

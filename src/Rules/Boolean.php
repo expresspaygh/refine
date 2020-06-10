@@ -19,7 +19,7 @@ class Boolean extends Rule
    * @param mixed $value the request value
    * @return mixed the processed value
    */
-  public function apply($value) {
+  public function apply($value, string $key, array $request) {
     if (in_array($value, [true, 1, "TRUE", "true"], true))
       $value = true;
     else if (in_array($value, [false, 0, "FALSE", "false"], true))

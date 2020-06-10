@@ -6,11 +6,11 @@ class FilterRulesTest extends TestCase
 {
   public function testCleanString()
   {
-    $this->assertEquals("aasdfa", (new Rules\CleanString())->apply("<a>asdf</a>"));
+    $this->assertEquals("aasdfa", (new Rules\CleanString())->apply("<a>asdf</a>", "", []));
   }
 
   public function testStripTags()
   {
-    $this->assertEquals("asdf", (new Rules\CleanTags())->apply("<a>asdf</a>"));
+    $this->assertEquals("asdf", (new Rules\CleanTags())->apply("<a>asdf</a>", "", []));
   }
 }

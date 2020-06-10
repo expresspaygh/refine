@@ -10,7 +10,7 @@ class CleanString extends Rule
    * @param mixed $value the request value
    * @return mixed the processed value
    */
-  public function apply($value): string {
+  public function apply($value, string $key, array $request): string {
     return preg_replace("/[^A-Za-z0-9-_., ]/", "", $value);
   }
 }

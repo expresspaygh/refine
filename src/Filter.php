@@ -2,6 +2,7 @@
 
 namespace Expay\Refine;
 use Expay\Refine\Rules\Rule;
+use Expay\Refine\Exceptions\InvalidField;
 
 /**
  * Filter incoming HTTP requests
@@ -13,7 +14,6 @@ use Expay\Refine\Rules\Rule;
 class Filter
 {
   /**
-   * __construct
    * Perform request filtering. Responses can be found on the constructed
    * object.
    *
@@ -39,13 +39,17 @@ class Filter
    */
   public function check(array $request = null) {
     if (is_null($request)) $request = $_REQUEST;
-    $response = $this->run($request);
-    $response = $this->checkFailures($response);
+    [$response, $errors] = $this->run($request);
 
-    return $response;
+    if (empty($errors)) 
+      return $this->formatResponse(0, "Success", $response);
+    else
+      return $this->formatResponse(2, 'Bad Request, kindly check and try again', $errors);
   }
 
-  public function addField(string $key, string $type) {
+  public function addField(string $key, $type) {
+    if (!is_string($type) && !is_array($type))
+      throw new \Exception("$type must be a string type or an array of rules");
     $this->fields[$key] = $type;
     return $this;
   }
@@ -58,6 +62,14 @@ class Filter
     return $this;
   }
 
+  public function addRules(string $key, array $rules) {
+    foreach($rules as $rule) {
+      $this->addRule($key, $rule);
+    }
+
+    return $this;
+  }
+
   /**
    * Replace stored rules for the given field type with the supplied ones
    *
@@ -65,11 +77,6 @@ class Filter
    */
   public function replaceRules(string $key, array $rules) {
     $this->filterRules[$key] = $rules;
-    return $this;
-  }
-
-  public function addFilterType(string $key, array $type) {
-    $this->filterTypes[$key] = $type;
     return $this;
   }
 
@@ -85,13 +92,6 @@ class Filter
   private $filterRules = [];
 
   /**
-   * Custom added filter types
-   *
-   * @var array[]
-   */
-  private $filterTypes = [];
-
-  /**
    * getFilterRulesForKey: Return the configured filter rules
    *
    * @return Rule[]
@@ -101,6 +101,9 @@ class Filter
     $fieldType = array_key_exists($key, $this->fields)
                ? $this->fields[$key]
                : null;
+
+    if (is_array($fieldType))
+      return $fieldType;
 
     if (array_key_exists($fieldType, $this->filterRules))
       return $this->filterRules[$fieldType];
@@ -137,52 +140,32 @@ class Filter
   private function run($request): array
   {
     $output = [];
+    $errors = [];
 
-    foreach ($request as $key => $value) {
+    $keys = array_unique(array_merge(array_keys($this->fields), array_keys($request)));
+    foreach ($keys as $key) {
+      $value = array_key_exists($key, $request) ? $request[$key] : null;
       // get filter rules and options
       $rules = $this->getFilterRulesForKey($key);
 
-      if (empty($rules))
+      if (is_null($rules))
         continue;
 
       // run filter rules
       foreach ($rules as $rule) {
-        $value = $rule->apply($value);
+        try {
+          $value = $rule->apply($value, $key, $request);
+        } catch (InvalidField $e) {
+          $errors[$key] = $e->getMessage();
+          break;
+        }
       }
 
-      $output[$key] = $value;
+      if (empty($errors[$key]))
+        $output[$key] = $value;
     }
 
-    return $output;
-  }
-
-  /**
-   * Check the filtered output and generate and store a success/error response.
-   * The response is stored on the `filterResponse` property
-   *
-   * @return int
-   */
-  private function checkFailures($response): array
-  {
-    $failures = array();
-    $passed = array();
-    foreach ((array) $response as $key => $value) {
-      // workaroud for false booleans being identical to an error value
-      $isBool = array_key_exists($key, $this->fields) && $this->fields[$key] === "bool";
-
-      if ($value === false && !$isBool) {
-        $failures[$key] = "$key is not valid, kindly check and try again";
-      } else {
-        $passed[$key] = $value;
-      }
-    }
-    if (!empty($failures)) {
-      $response = $this->formatResponse(2, 'Bad Request, kindly check and try again', $failures);
-    } else {
-      $response = $this->formatResponse(0, 'Success', $passed);
-    }
-
-    return $response;
+    return [$output, $errors];
   }
 
   /**

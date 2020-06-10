@@ -10,7 +10,7 @@ class CleanTags extends Rule
    * @param mixed $value the request value
    * @return mixed the processed value
    */
-  public function apply($value): string {
+  public function apply($value, string $key, array $request): string {
     return strip_tags($value);
   }
 }
