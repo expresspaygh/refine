@@ -16,4 +16,17 @@ abstract class Rule
   public function apply($value, string $key, array $request) {
     return $value;
   }
+  
+  /**
+   * applyClass
+   *
+   * @param  mixed $value
+   * @param  mixed $classObj
+   * @param  mixed $method
+   * @return void
+   */
+  public function applyClass($value,$classObj,$method)
+  {
+    return $value;
+  }
 }

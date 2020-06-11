@@ -4,6 +4,16 @@ require_once(__DIR__."/../vendor/autoload.php");
 
 use Expay\Refine\Filter;
 
+class CVV extends Rule
+{
+	public function apply($value, string $key, array $request): string
+	{
+		if (preg_match("/^\d\d\d$/", $value))
+			return $value;
+		throw new InvalidField("Invalid cvv");
+	}
+}
+
 /**
  * FilterCases
  */
@@ -16,26 +26,10 @@ trait FilterCases
    */
   private function filter_check()
   {
-    $this->request=[
-      "some_url" => "https://foobar.com",
-      "some_email" => "someone@expresspaygh.com",
-      "some_int" => 1,
-      "some_bool" => true,
-      "some_array" => [1, 2, 3],
-      "some_ip" => "127.0.0.1",
-      "some_string" => "<a href='/asdf'>foobar</a>"
-    ];
+    $result = (new Filter())
+    ->addRule("cvv", new CVV)
+    ->check(["cvv" => "123"]);
 
-    $this->options=[
-      'some_url' => 'url',
-      'some_email' => 'email',
-      'some_int' => 'int',
-      "some_bool" => "bool",
-      "some_array" => "array",
-      "some_ip" => "ip",
-      "some_string" => "clean_string"
-    ];
-
-    return Filter::check($this->options,$this->request);
+    var_dump($result);
   }
 }
