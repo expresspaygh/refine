@@ -54,6 +54,11 @@ class Filter
     return $this;
   }
 
+  public function addFields(array $fields) {
+    foreach($fields as $key => $field)
+      $this->addField($key, $field);
+  }
+
   public function addRule(string $key, Rule $rule) {
     if (!array_key_exists($key, $this->filterRules))
       $this->filterRules[$key] = [];
