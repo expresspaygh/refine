@@ -2,9 +2,22 @@
 
 namespace Expay\Refine\Exceptions;
 
-class FilterRulesNotFound extends \Exception {
+/**
+ * FilterRulesNotFound
+ */
+class FilterRulesNotFound extends \Exception {  
+  /**
+   * data
+   *
+   * @var mixed
+   */
   public $data;
-
+  
+  /**
+   * __construct
+   *
+   * @return void
+   */
   public function __construct(
     $type,
     $code = null,

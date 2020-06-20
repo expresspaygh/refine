@@ -2,9 +2,22 @@
 
 namespace Expay\Refine\Exceptions;
 
-class InvalidField extends \Exception {
+/**
+ * InvalidField
+ */
+class InvalidField extends \Exception {  
+  /**
+   * data
+   *
+   * @var mixed
+   */
   public $data;
-
+  
+  /**
+   * __construct
+   *
+   * @return void
+   */
   public function __construct(
     $message,
     $code = null,

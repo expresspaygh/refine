@@ -6,95 +6,41 @@ use Expay\Refine\Exceptions\InvalidField;
 
 /**
  * Filter incoming HTTP requests
- *
- * @todo document what filtering is done
- * @todo add phone number validation
- *
  */
 class Filter
 {
   /**
-   * Perform request filtering. Responses can be found on the constructed
+   * filterRules: Custom added filter rules
+   *
+   * @var array
+   */
+  private $filterRules = [];
+
+  /**
+   * The fields as specified by calling `addFields`
+   *
+   * @var array
+   */
+  private $fields = [];
+
+  /**
+   * __construct: Perform request filtering. Responses can be found on the constructed
    * object.
    *
-   * @todo document the options
-   * @param  mixed $options
-   * @param  mixed $request
+   * @param  mixed $fields
    * @return void
    */
-  public function __construct(array $fields = []) {
+  public function __construct(array $fields = [])
+  {
     $this->fields = $fields;
     $this->addDefaultFilterRules();
   }
 
   /**
-   * Check the given request against the defined fields
-   *
-   * @param array $request
-   * @todo document the options
-   * @param array $options
-   *
-   * @todo document the format
-   * @return array
-   */
-  public function check(array $request = null) {
-    if (is_null($request)) $request = $_REQUEST;
-    [$response, $errors] = $this->run($request);
-
-    if (empty($errors)) 
-      return $this->formatResponse(0, "Success", $response);
-    else
-      return $this->formatResponse(2, 'Bad Request, kindly check and try again', $errors);
-  }
-
-  public function addField(string $key, $type) {
-    if (!is_string($type) && !is_array($type))
-      throw new \Exception("$type must be a string type or an array of rules");
-    $this->fields[$key] = $type;
-    return $this;
-  }
-
-  public function addRule(string $key, Rule $rule) {
-    if (!array_key_exists($key, $this->filterRules))
-      $this->filterRules[$key] = [];
-
-    $this->filterRules[$key][] = $rule;
-    return $this;
-  }
-
-  public function addRules(string $key, array $rules) {
-    foreach($rules as $rule) {
-      $this->addRule($key, $rule);
-    }
-
-    return $this;
-  }
-
-  /**
-   * Replace stored rules for the given field type with the supplied ones
-   *
-   * @param Rule[]
-   */
-  public function replaceRules(string $key, array $rules) {
-    $this->filterRules[$key] = $rules;
-    return $this;
-  }
-
-  /************************************************************************
-   * Private methods and variables                                        *
-   ***********************************************************************/
-
-  /**
-   * Custom added filter rules
-   *
-   * @var Rule[]
-   */
-  private $filterRules = [];
-
-  /**
    * getFilterRulesForKey: Return the configured filter rules
    *
-   * @return Rule[]
+   * @param  mixed $key
+   * @return array
    */
   private function getFilterRulesForKey($key): ?array
   {
@@ -129,53 +75,14 @@ class Filter
     if (!is_null($output)) $out['output'] = $output;
     return $out;
   }
-
+  
   /**
-   * run
-   * Run the php `filter_var_array` function and store the results.
-   * The response is stored on the `finalFilterOutput` property
+   * addDefaultFilterRules
    *
-   * @return int
+   * @return void
    */
-  private function run($request): array
+  private function addDefaultFilterRules()
   {
-    $output = [];
-    $errors = [];
-
-    $keys = array_unique(array_merge(array_keys($this->fields), array_keys($request)));
-    foreach ($keys as $key) {
-      $value = array_key_exists($key, $request) ? $request[$key] : null;
-      // get filter rules and options
-      $rules = $this->getFilterRulesForKey($key);
-
-      if (is_null($rules))
-        continue;
-
-      // run filter rules
-      foreach ($rules as $rule) {
-        try {
-          $value = $rule->apply($value, $key, $request);
-        } catch (InvalidField $e) {
-          $errors[$key] = $e->getMessage();
-          break;
-        }
-      }
-
-      if (empty($errors[$key]))
-        $output[$key] = $value;
-    }
-
-    return [$output, $errors];
-  }
-
-  /**
-   * The fields as specified by calling `addFields`
-   *
-   * @var array
-   */
-  private $fields = [];
-
-  private function addDefaultFilterRules() {
     $this->addRule("string", new Rules\CleanTags);
     $this->addRule("bool", new Rules\Boolean);
     $this->addRule('string', new Rules\PHPFilter([
@@ -210,4 +117,120 @@ class Filter
       'filter' => FILTER_VALIDATE_IP
     ]));
   }
+
+  /**
+   * run: Run the php `filter_var_array` function and store the results.
+   * The response is stored on the `finalFilterOutput` property
+   *
+   * @param  mixed $request
+   * @return array
+   */
+  private function run($request): array
+  {
+    $output = [];
+    $errors = [];
+
+    $keys = array_unique(array_merge(array_keys($this->fields), array_keys($request)));
+    foreach ($keys as $key) {
+      $value = array_key_exists($key, $request) ? $request[$key] : null;
+      // get filter rules and options
+      $rules = $this->getFilterRulesForKey($key);
+
+      if (is_null($rules))
+        continue;
+
+      // run filter rules
+      foreach ($rules as $rule) {
+        try {
+          $value = $rule->apply($value, $key, $request);
+        } catch (InvalidField $e) {
+          $errors[$key] = $e->getMessage();
+          break;
+        }
+      }
+
+      if (empty($errors[$key]))
+        $output[$key] = $value;
+    }
+
+    return [$output, $errors];
+  }
+
+  /**
+   * check: Check the given request against the defined fields
+   *
+   * @param  mixed $request
+   * @return void
+   */
+  public function check(array $request = null)
+  {
+    if (is_null($request)) $request = $_REQUEST;
+    [$response, $errors] = $this->run($request);
+
+    if (empty($errors)) 
+      return $this->formatResponse(0, "Success", $response);
+    else
+      return $this->formatResponse(2, 'Bad Request, kindly check and try again', $errors);
+  }
+  
+  /**
+   * addField
+   *
+   * @param  mixed $key
+   * @param  mixed $type
+   * @return void
+   */
+  public function addField(string $key, $type)
+  {
+    if (!is_string($type) && !is_array($type))
+      throw new InvalidField("$type must be a string type or an array of rules");
+    $this->fields[$key] = $type;
+    return $this;
+  }
+  
+  /**
+   * addRule
+   *
+   * @param  mixed $key
+   * @param  mixed $rule
+   * @return void
+   */
+  public function addRule(string $key, Rule $rule)
+  {
+    if (!array_key_exists($key, $this->filterRules))
+      $this->filterRules[$key] = [];
+
+    $this->filterRules[$key][] = $rule;
+    return $this;
+  }
+  
+  /**
+   * addRules
+   *
+   * @param  mixed $key
+   * @param  mixed $rules
+   * @return void
+   */
+  public function addRules(string $key, array $rules)
+  {
+    foreach($rules as $rule) {
+      $this->addRule($key, $rule);
+    }
+
+    return $this;
+  }
+
+  /**
+   * replaceRules: Replace stored rules for the given field type with the supplied ones
+   *
+   * @param  mixed $key
+   * @param  mixed $rules
+   * @return void
+   */
+  public function replaceRules(string $key, array $rules)
+  {
+    $this->filterRules[$key] = $rules;
+    return $this;
+  }
+
 }

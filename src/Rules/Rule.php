@@ -3,29 +3,20 @@
 namespace Expay\Refine\Rules;
 
 /**
- * Perform some preprocessing on a request value before it's filtered
+ * Rule: Perform some preprocessing on a request value before it's filtered
  */
 abstract class Rule
 {
   /**
-   * Apply the rule to the given key and value and return the result
-   *
-   * @param mixed $value the request value
-   * @return mixed the processed value
-   */
-  public function apply($value, string $key, array $request) {
-    return $value;
-  }
-  
-  /**
-   * applyClass
+   * apply: Apply the rule to the given key and value and return the result
    *
    * @param  mixed $value
-   * @param  mixed $classObj
-   * @param  mixed $method
+   * @param  mixed $key
+   * @param  mixed $request
+   * @param  mixed $validationRules
    * @return void
    */
-  public function applyClass($value,$classObj,$method)
+  public function apply($value, string $key="", array $request=[], array $validationRules=[])
   {
     return $value;
   }

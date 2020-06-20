@@ -14,12 +14,15 @@ class Boolean extends Rule
   }
 
   /**
-   * Process a boolean value
+   * apply: Process a boolean value
    *
-   * @param mixed $value the request value
-   * @return mixed the processed value
+   * @param  mixed $value
+   * @param  mixed $key
+   * @param  mixed $request
+   * @param  mixed $validationRules
+   * @return void
    */
-  public function apply($value, string $key, array $request) {
+  public function apply($value, string $key="", array $request=[], array $validationRules=[]) {
     if (in_array($value, [true, 1, "TRUE", "true"], true))
       $value = true;
     else if (in_array($value, [false, 0, "FALSE", "false"], true))

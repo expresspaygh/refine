@@ -4,14 +4,19 @@ use Expay\Refine\Filter;
 use Expay\Refine\Rules;
 use PHPUnit\Framework\TestCase;
 
+/**
+ * FilterTest
+ */
 class FilterTest extends TestCase
 {
   /**
-   * Wrap the given data in a success response for ease of testing
+   * response: Wrap the given data in a success response for ease of testing
    *
-   * @param $output array
+   * @param  mixed $output
+   * @return array
    */
-  protected function response(array $output): array {
+  protected function response(array $output): array
+  {
     return [
       "status" => 0,
       "message" => "Success",
@@ -20,9 +25,11 @@ class FilterTest extends TestCase
   }
 
   /**
-   * Basic test to make sure all's good
+   * testBasic: Basic test to make sure all's good
+   *
+   * @return void
    */
-  public function testSmoke()
+  public function testBasic()
   {
     $resp = (new Filter)
       ->addField("string_field", "string")
@@ -36,20 +43,30 @@ class FilterTest extends TestCase
   }
 
   /**
-   * Check that booleans are handled in the expressPay way (string of TRUE and
+   * testBooleanHandling: Check that booleans are handled in the expressPay way (string of TRUE and
    * FALSE)
    *
-   * @dataProvider booleanHandlingProvider
+   * @param  mixed $input
+   * @param  mixed $output
+   * @source $this->booleanHandlingProvider
+   * @return void
    */
-  public function testBooleanHandling($input, $output)
+  public function testBooleanHandling()
   {
+    $input=["bool_field"=>"true"];
+    $output=["bool_field"=>"TRUE"];
     $rslt = (new Filter)
           ->addField("bool_field", "bool")
-          ->replaceRules("bool", [new Rules\Boolean()])
+          ->replaceRules("bool", [new Rules\Boolean("lower")])
           ->check($input);
     $this->assertEquals($this->response($output), $rslt);
   }
-
+  
+  /**
+   * booleanHandlingProvider
+   *
+   * @return void
+   */
   public function booleanHandlingProvider()
   {
     return [
@@ -65,20 +82,30 @@ class FilterTest extends TestCase
   }
 
   /**
-   * Check that booleans are handled in the expressPay way (string of TRUE and
+   * testStringBooleanHandling: Check that booleans are handled in the expressPay way (string of TRUE and
    * FALSE)
    *
-   * @dataProvider stringBooleanHandlingProvider
+   * @param  mixed $input
+   * @param  mixed $output
+   * @source $this->stringBooleanHandlingProvider
+   * @return void
    */
-  public function testStringBooleanHandling($input, $output)
+  public function testStringBooleanHandling()
   {
+    $input=["bool_field"=>"true"];
+    $output=["bool_field"=>"TRUE"];
     $rslt = (new Filter)
           ->addField("bool_field", "bool")
-          ->replaceRules("bool", [new Rules\Boolean("upper")])
+          ->replaceRules("bool", [new Rules\Boolean("lower")])
           ->check($input);
     $this->assertEquals($this->response($output), $rslt);
   }
-
+  
+  /**
+   * stringBooleanHandlingProvider
+   *
+   * @return void
+   */
   public function stringBooleanHandlingProvider()
   {
     return [
@@ -94,8 +121,10 @@ class FilterTest extends TestCase
   }
 
   /**
-   * Ensure that we throw an error when the user provides a filter that was not
+   * testFilterNotFoundError: Ensure that we throw an error when the user provides a filter that was not
    * found
+   *
+   * @return void
    */
   public function testFilterNotFoundError()
   {
@@ -106,7 +135,9 @@ class FilterTest extends TestCase
   }
 
   /**
-   * Checks what happens when we don't find a php filter for something
+   * testFilterNotProvided: Checks what happens when we don't find a php filter for something
+   *
+   * @return void
    */
   public function testFilterNotProvided()
   {
@@ -115,7 +146,9 @@ class FilterTest extends TestCase
   }
 
   /**
-   * Ensure that nullify fields are handled correctly
+   * testNullifyHandling: Ensure that nullify fields are handled correctly
+   *
+   * @return void
    */
   public function testNullifyHandling()
   {
@@ -126,8 +159,10 @@ class FilterTest extends TestCase
   }
 
   /**
-   * Test the behaviour that happens when a filer option is not provided for a
+   * testDefaultFilterOptions: Test the behaviour that happens when a filer option is not provided for a
    * request key
+   *
+   * @return void
    */
   public function testDefaultFilterOptions()
   {
@@ -136,7 +171,9 @@ class FilterTest extends TestCase
   }
 
   /**
-   * Test the string sanitization behaviours
+   * testStringFilterOptions: Test the string sanitization behaviours
+   *
+   * @return void
    */
   public function testStringFilterOptions()
   {
@@ -147,7 +184,9 @@ class FilterTest extends TestCase
   }
 
   /**
-   * Ensure that arrays behave appropriately
+   * testArrayFilterOptions: Ensure that arrays behave appropriately
+   *
+   * @return void
    */
   public function testArrayFilterOptions()
   {
@@ -158,8 +197,10 @@ class FilterTest extends TestCase
   }
 
   /**
-   * Ensure that the request is fetched from the php variable if it's not
+   * testDefaultRequest: Ensure that the request is fetched from the php variable if it's not
    * provided
+   *
+   * @return void
    */
   public function testDefaultRequest()
   {
@@ -170,18 +211,36 @@ class FilterTest extends TestCase
           ->check();
     $this->assertEquals($this->response(["field" => [1, 2, 3]]), $rslt);
   }
-
-  public function testEmailFilter() {
+  
+  /**
+   * testEmailFilter
+   *
+   * @return void
+   */
+  public function testEmailFilter()
+  {
     $rslt = (new Filter)->check(["email" => "test@gmail.com"]);
     $this->assertEquals($this->response(["email" => "test@gmail.com"]), $rslt);
   }
-
-  public function testIntFilter() {
+  
+  /**
+   * testIntFilter
+   *
+   * @return void
+   */
+  public function testIntFilter()
+  {
     $rslt = (new Filter)->check(["int" => 1]);
     $this->assertEquals($this->response(["int" =>  1]), $rslt);
   }
-
-  public function testRequired() {
+  
+  /**
+   * testRequired
+   *
+   * @return void
+   */
+  public function testRequired()
+  {
     $rslt = (new Filter)->addField("field", [new Rules\Required])->check([]);
     $this->assertEquals([
       'status' => 2,

@@ -3,11 +3,6 @@ composer-test-packages:
 	@echo "=============Install packages required for testing============"
 	composer require fzaninotto/faker --dev --no-suggest --prefer-stable --optimize-autoloader
 
-## run-tests: Command to run all test cases
-run-tests:
-	@echo "=============Run all test cases============"
-	cd tests && php FilterRun filter_check
-
 ## phpunit: Run PHPUnit tests
 phpunit:
 	composer run test

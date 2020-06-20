@@ -3,18 +3,24 @@
 namespace Expay\Refine\Rules;
 use Expay\Refine\Exceptions\InvalidField;
 
+/**
+ * Required
+ */
 class Required extends Rule
 {
   /**
-   * Throw an error if the field is absent
+   * apply: Throw an error if the field is absent
    *
-   * @param mixed $value the request value
-   * @return mixed the processed value
+   * @param  mixed $value
+   * @param  mixed $key
+   * @param  mixed $request
+   * @param  mixed $validationRules
+   * @return void
    */
-  public function apply($value, $key, $request) {
+  public function apply($value, string $key="", array $request=[], array $validationRules=[])
+  {
     if (!array_key_exists($key, $request))
       throw new InvalidField("Field '$key' is required");
-
     return $value;
   }
 }

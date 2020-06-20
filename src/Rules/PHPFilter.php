@@ -2,12 +2,23 @@
 
 namespace Expay\Refine\Rules;
 
+/**
+ * PHPFilter
+ */
 class PHPFilter extends Rule
-{
+{  
+  /**
+   * definition
+   *
+   * @var mixed
+   */
   protected $definition;
 
   /**
-   * @param array $definition
+   * __construct
+   *
+   * @param  mixed $definition
+   * @return void
    */
   public function __construct(array $definition)
   {
@@ -15,12 +26,15 @@ class PHPFilter extends Rule
   }
 
   /**
-   * Process a boolean value
+   * apply: Process filter rules
    *
-   * @param mixed $value the request value
-   * @return mixed the processed value
+   * @param  mixed $value
+   * @param  mixed $key
+   * @param  mixed $request
+   * @param  mixed $validationRules
+   * @return void
    */
-  public function apply($value, string $key, array $request)
+  public function apply($value, string $key="", array $request=[], array $validationRules=[])
   {
     return filter_var_array(["field" => $value], ["field" => $this->definition])["field"];
   }
