@@ -162,8 +162,7 @@ class Filter
    * @param  mixed $request
    * @return void
    */
-  public function check(array $request = null)
-  {
+  public function check(array $request = null) {
     if (is_null($request)) $request = $_REQUEST;
     [$response, $errors] = $this->run($request);
 
@@ -180,12 +179,22 @@ class Filter
    * @param  mixed $type
    * @return void
    */
-  public function addField(string $key, $type)
-  {
+  public function addField(string $key, $type) {
     if (!is_string($type) && !is_array($type))
-      throw new InvalidField("$type must be a string type or an array of rules");
+      throw new \Exception("$type must be a string type or an array of rules");
     $this->fields[$key] = $type;
     return $this;
+  }
+  
+  /**
+   * addFields
+   *
+   * @param  mixed $fields
+   * @return void
+   */
+  public function addFields(array $fields) {
+    foreach($fields as $key => $field)
+      $this->addField($key, $field);
   }
   
   /**
@@ -195,8 +204,7 @@ class Filter
    * @param  mixed $rule
    * @return void
    */
-  public function addRule(string $key, Rule $rule)
-  {
+  public function addRule(string $key, Rule $rule) {
     if (!array_key_exists($key, $this->filterRules))
       $this->filterRules[$key] = [];
 
@@ -211,8 +219,7 @@ class Filter
    * @param  mixed $rules
    * @return void
    */
-  public function addRules(string $key, array $rules)
-  {
+  public function addRules(string $key, array $rules) {
     foreach($rules as $rule) {
       $this->addRule($key, $rule);
     }
