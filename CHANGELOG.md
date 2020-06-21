@@ -6,5 +6,9 @@
 * Add in short description into readme
 * Add in package documentations
 ---
-## Upcoming Changes - 08/06/2020 - Jeffery Osei
-* Replace function position arguements with key value pair for ellipses token
+## Changes - 20/06/2020 - Jeffery Osei
+* Hook in internal and custom validations
+* Add in tests
+* Add in Nullable and Validate rules
+* Bug Fixes
+* Code Cleanups

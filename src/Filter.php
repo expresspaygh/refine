@@ -37,26 +37,36 @@ class Filter
   }
 
   /**
-   * getFilterRulesForKey: Return the configured filter rules
+   * getFilterRulesForKey: Return the configured filter rules for key
    *
    * @param  mixed $key
-   * @return array
+   * @return array || NULL
    */
-  private function getFilterRulesForKey($key): ?array
+  private function getFilterRulesForKey($key):?array
   {
-    $fieldType = array_key_exists($key, $this->fields)
-               ? $this->fields[$key]
-               : null;
-
+    $fieldType = array_key_exists($key, $this->fields) ? $this->fields[$key] : null;
+    
     if (is_array($fieldType))
       return $fieldType;
 
-    if (array_key_exists($fieldType, $this->filterRules))
+    if(array_key_exists($fieldType, $this->filterRules))
       return $this->filterRules[$fieldType];
-    else if (array_key_exists($key, $this->filterRules))
+    elseif(array_key_exists($key, $this->filterRules))
       return $this->filterRules[$key];
 
     return null;
+  }
+
+  /**
+   * getFilterRulesForValue: Return the configured filter rules for value
+   *
+   * @param  mixed $value
+   * @return array || NULL
+   */
+  private function getFilterRulesForValue($value):?array
+  {
+    $filter_rules = $this->filterRules[gettype($value)];
+    return !empty($filter_rules) ? $filter_rules : null;
   }
 
   /**
@@ -67,7 +77,7 @@ class Filter
    * @param  mixed $output
    * @return array
    */
-  private function formatResponse(int $status, string $message, array $output = null): array
+  private function formatResponse(int $status, string $message, array $output = null):array
   {
     $out = array();
     $out['status'] = $status;
@@ -79,12 +89,17 @@ class Filter
   /**
    * addDefaultFilterRules
    *
-   * @return void
+   * @return Filter
    */
-  private function addDefaultFilterRules()
+  private function addDefaultFilterRules():Filter
   {
+    // Custom
     $this->addRule("string", new Rules\CleanTags);
     $this->addRule("bool", new Rules\Boolean);
+    $this->addRule("clean_string", new Rules\CleanString);
+    $this->addRule("nullable", new Rules\Nullable);
+
+    // PHP Classes
     $this->addRule('string', new Rules\PHPFilter([
       'filter' => FILTER_SANITIZE_STRING,
       'flags' => FILTER_FLAG_STRIP_LOW | FILTER_FLAG_STRIP_HIGH | FILTER_FLAG_STRIP_BACKTICK
@@ -116,6 +131,8 @@ class Filter
     $this->addRule('ip', new Rules\PHPFilter([
       'filter' => FILTER_VALIDATE_IP
     ]));
+
+    return $this;
   }
 
   /**
@@ -125,7 +142,7 @@ class Filter
    * @param  mixed $request
    * @return array
    */
-  private function run($request): array
+  private function run($request):array
   {
     $output = [];
     $errors = [];
@@ -135,9 +152,10 @@ class Filter
       $value = array_key_exists($key, $request) ? $request[$key] : null;
       // get filter rules and options
       $rules = $this->getFilterRulesForKey($key);
-
       if (is_null($rules))
-        continue;
+        $rules = $this->getFilterRulesForValue($value);
+        if(is_null($rules))
+          continue;
 
       // run filter rules
       foreach ($rules as $rule) {
@@ -160,9 +178,10 @@ class Filter
    * check: Check the given request against the defined fields
    *
    * @param  mixed $request
-   * @return void
+   * @return array
    */
-  public function check(array $request = null) {
+  public function check(array $request = null):array
+  {
     if (is_null($request)) $request = $_REQUEST;
     [$response, $errors] = $this->run($request);
 
@@ -177,9 +196,10 @@ class Filter
    *
    * @param  mixed $key
    * @param  mixed $type
-   * @return void
+   * @return Filter
    */
-  public function addField(string $key, $type) {
+  public function addField(string $key, $type):Filter
+  {
     if (!is_string($type) && !is_array($type))
       throw new \Exception("$type must be a string type or an array of rules");
     $this->fields[$key] = $type;
@@ -190,11 +210,13 @@ class Filter
    * addFields
    *
    * @param  mixed $fields
-   * @return void
+   * @return Filter
    */
-  public function addFields(array $fields) {
+  public function addFields(array $fields):Filter
+  {
     foreach($fields as $key => $field)
       $this->addField($key, $field);
+    return $this;
   }
   
   /**
@@ -202,9 +224,10 @@ class Filter
    *
    * @param  mixed $key
    * @param  mixed $rule
-   * @return void
+   * @return Filter
    */
-  public function addRule(string $key, Rule $rule) {
+  public function addRule(string $key, Rule $rule):Filter
+  {
     if (!array_key_exists($key, $this->filterRules))
       $this->filterRules[$key] = [];
 
@@ -217,9 +240,10 @@ class Filter
    *
    * @param  mixed $key
    * @param  mixed $rules
-   * @return void
+   * @return Filter
    */
-  public function addRules(string $key, array $rules) {
+  public function addRules(string $key, array $rules):Filter
+  {
     foreach($rules as $rule) {
       $this->addRule($key, $rule);
     }
@@ -232,12 +256,11 @@ class Filter
    *
    * @param  mixed $key
    * @param  mixed $rules
-   * @return void
+   * @return Filter
    */
-  public function replaceRules(string $key, array $rules)
+  public function replaceRules(string $key, array $rules):Filter
   {
     $this->filterRules[$key] = $rules;
     return $this;
   }
-
 }

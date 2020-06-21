@@ -2,6 +2,9 @@
 
 namespace Expay\Refine\Rules;
 
+/**
+ * CleanString
+ */
 class CleanString extends Rule
 {
   /**

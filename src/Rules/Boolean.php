@@ -3,8 +3,19 @@
 namespace Expay\Refine\Rules;
 
 class Boolean extends Rule
-{
-  protected $stringOutput;
+{  
+  /**
+   * stringOutput
+   *
+   * @var mixed
+   */
+  protected $stringOutput;  
+  /**
+   * innerValue
+   *
+   * @var mixed
+   */
+  private $innerValue;
 
   /**
    * @param ?string $stringOutput "upper" | "lower"
@@ -22,18 +33,30 @@ class Boolean extends Rule
    * @param  mixed $validationRules
    * @return void
    */
-  public function apply($value, string $key="", array $request=[], array $validationRules=[]) {
+  public function apply($value, string $key="", array $request=[], array $validationRules=[])
+  {
     if (in_array($value, [true, 1, "TRUE", "true"], true))
-      $value = true;
-    else if (in_array($value, [false, 0, "FALSE", "false"], true))
-      $value = false;
-    else return null;
+    {
+      $this->innerValue = true;
+    }
+    elseif (in_array($value, [false, 0, "FALSE", "false"], true))
+    {
+      $this->innerValue = false;
+    }
+    else
+    {
+      return null;
+    }
 
     if ($this->stringOutput === "upper")
-      return $value ? "TRUE" : "FALSE";
-    else if ($this->stringOutput === "lower")
-      return $value ? "true" : "false";
-    else
-      return $value;
+    {
+      return $this->innerValue ? "TRUE" : "FALSE";
+    }
+    elseif ($this->stringOutput === "lower")
+    {
+      return $this->innerValue ? "true" : "false";
+    }
+
+    return $value;
   }
 }

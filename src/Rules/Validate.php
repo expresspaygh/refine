@@ -9,26 +9,41 @@ use Expay\Refine\Exceptions\ValidationError;
  * Validate
  */
 class Validate extends Rule
-{  
+{
   /**
-   * validator
+   * vRules
    *
-   * @var mixed
+   * @var array
    */
-  private $validator;
+  private $vRules=array();  
+  /**
+   * customRules
+   *
+   * @var array
+   */
+  private $customRules=array();
+  /**
+   * throwException
+   *
+   * @var bool
+   */
+  private $throwException=true;
   
   /**
    * __construct
    *
    * @return void
    */
-  public function __construct()
+  public function __construct(array $vRules=[], array $customRules=[])
   {
-    $this->validator=new Validator;
+    $this->vRules=$vRules;
+    $this->customRules=$customRules;
   }
 
   /**
    * apply
+   * 
+   * @package https://github.com/rakit/validation
    *
    * @param  mixed $value
    * @param  mixed $key
@@ -38,14 +53,49 @@ class Validate extends Rule
    */
   public function apply($value, string $key="", array $request=[], array $validationRules=[])
   {
-    $validation = $this->validator->validate([$key=>$value], $validationRules);
-    $errors = $validation->errors();
-
-    if(!empty($errors->first($key)))
+    // check if in func validation rules was passed
+    if(!empty($validationRules) && empty($this->vRules))
     {
-      throw new ValidationError($errors->first($key));
+      $this->throwException=false;
+      $this->vRules=$validationRules;
+    }
+    // check if both internal and external rules are empty
+    elseif(empty($validationRules) && empty($this->vRules))
+    {
+      throw new ValidationError("No validation rules found");
     }
 
+    // init validation
+    $validator=new Validator;
+
+    // apply custom rules if any
+    if(!empty($this->customRules))
+    {
+      foreach($this->customRules as $rkey=>$rvalue)
+      {
+        if(is_object($rvalue))
+        {
+          $validator->addValidator($rkey, $rvalue);
+        }else{
+          throw new ValidationError("Custom rule($rkey) is not an object - ".gettype($cvRule));
+        }
+      }
+    }
+
+    // run validation
+    $validation = $validator->validate([$key=>$value], $this->vRules);
+    $errors = $validation->errors();
+
+    // check for errors
+    if(!empty($errors->first($key)))
+    {
+      if(!$this->throwException)
+        return $errors->toArray();
+      else
+        throw new ValidationError($errors->first($key));
+    }
+
+    // respond
     return $value;
   }
 }

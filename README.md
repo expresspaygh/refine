@@ -169,3 +169,134 @@ array(3) {
   }
 }
 ```
+
+---
+
+## Writing validations
+
+Validations can be written by adding the filter rule and validation rules. 
+
+Visit this github repository [Rakit/Validation](https://github.com/rakit/validation#available-rules) for more validation rule options you can use.
+
+```php
+use Expay\Refine\Rules;
+use Expay\Refine\Filter;
+use Expay\Refine\Exceptions\ValidationError;
+
+try
+{
+	$filter=new Filter;
+
+	$vRules=["email"=>"required|present|email"];
+	$fields=["email"=>[new Rules\Validate($vRules),new Rules\CleanTags]];
+	$data=["email"=>"info@expresspaygh.com"];
+
+	$result=$filter->addFields($fields)->check($data);
+}
+catch(ValidationError $e)
+{
+	$result=$e->getMessage();
+}
+
+var_dump($result);
+```
+
+```
+array(3) {
+  ["status"]=>
+  int(0)
+  ["message"]=>
+  string(7) "Success"
+  ["output"]=>
+  array(1) {
+    ["email"]=>
+    string(19) "info@expresspaygh.com"
+  }
+}
+```
+
+## Writing Custom Validation Rules
+
+Custom validation rules can be written by adding the filter rule, then add validation rules as first argument and key value pairs containing your custom validation rule names and their respective classes as a second argument to the filter rule. 
+
+Visit this github repository [Rakit/Validation/Override/Rules](https://github.com/rakit/validation#registeroverride-rule) for more custom validation rule options you can use.
+
+```php
+use Expay\Refine\Rules;
+use Expay\Refine\Filter;
+use Expay\Refine\Exceptions\ValidationError;
+use Rakit\Validation\Rule as ValidationRule;
+
+/**
+ * ValidationRuleObjectProvider
+ */
+class ValidationRuleObjectProvider extends ValidationRule
+{    
+  /**
+   * message
+   *
+   * @var string
+   */
+  protected $message = "";
+    
+  /**
+   * __construct
+   *
+   * @return void
+   */
+  public function __construct()
+  {
+    $this->message=":value is not a valid object";
+  }
+    
+  /**
+   * check
+   *
+   * @param  mixed $value
+   * @return bool
+   */
+  public function check($value) : bool
+  {
+    return is_object($value);
+  }
+}
+
+try
+{
+	$filter=new Filter;
+
+	$vRules=['randomObj'=>'required|object_value'];
+	$customRules=["object_value"=>new ValidationRuleObjectProvider];
+
+	$fields=["obj_field"=>[new Rules\Validate($vRules,$customRules)]];
+
+	$objData=new \stdClass();
+	$objData->{"hello"}="hello sir";
+	$data=["obj_field"=>$objData];
+
+	$result=$filter->addFields($fields)->check($data);
+}
+catch(ValidationError $e)
+{
+	$result=$e->getMessage();
+}
+
+var_dump($result);
+```
+
+```
+array(3) {
+  ["status"]=>
+  int(0)
+  ["message"]=>
+  string(7) "Success"
+  ["output"]=>
+  array(1) {
+    ["obj_field"]=>
+    object(stdClass)#900 (1) {
+      ["hello"]=>
+      string(9) "hello sir"
+    }
+  }
+}
+```

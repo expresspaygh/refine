@@ -1,14 +1,41 @@
 <?php
 
-use Expay\Refine\Filter;
+use Faker\Factory;
 use Expay\Refine\Rules;
+use Expay\Refine\Filter;
 use PHPUnit\Framework\TestCase;
+use Expay\Refine\Exceptions\ValidationError;
+use Expay\Refine\Tests\Providers\FakerArrayProvider;
+use Expay\Refine\Tests\Providers\FakerObjectProvider;
+use Expay\Refine\Tests\Providers\ValidationRuleObjectProvider;
 
 /**
  * FilterTest
  */
 class FilterTest extends TestCase
 {
+  /**
+   * faker
+   *
+   * @var mixed
+   */
+  private $faker;
+
+  /**
+   * __construct
+   *
+   * @return void
+   */
+  public function __construct()
+  {
+    parent::__construct();
+    $this->faker=Factory::create();
+
+    // load custom providers
+    $this->faker->addProvider(new FakerArrayProvider($this->faker));
+    $this->faker->addProvider(new FakerObjectProvider($this->faker));
+  }
+  
   /**
    * response: Wrap the given data in a success response for ease of testing
    *
@@ -31,118 +58,80 @@ class FilterTest extends TestCase
    */
   public function testBasic()
   {
-    $resp = (new Filter)
-      ->addField("string_field", "string")
-      ->check(["string_field" => "asdf"]);
+    $filter=new Filter;
 
-    $this->assertEquals([
-      "status" => 0,
-      "message" => "Success",
-      "output" => ["string_field" => "asdf"]
-    ], $resp);
+    $fields=["string_field"=>"string"];
+    $data=["string_field" => $this->faker->word];
+
+    $this->assertEquals(
+      $this->response($data), 
+      $filter->addFields($fields)->check($data)
+    );
   }
 
   /**
-   * testBooleanHandling: Check that booleans are handled in the expressPay way (string of TRUE and
-   * FALSE)
+   * testBooleanHandling: Check that booleans are not string
    *
    * @param  mixed $input
    * @param  mixed $output
-   * @source $this->booleanHandlingProvider
    * @return void
    */
   public function testBooleanHandling()
   {
-    $input=["bool_field"=>"true"];
-    $output=["bool_field"=>"TRUE"];
-    $rslt = (new Filter)
-          ->addField("bool_field", "bool")
-          ->replaceRules("bool", [new Rules\Boolean("lower")])
-          ->check($input);
-    $this->assertEquals($this->response($output), $rslt);
-  }
-  
-  /**
-   * booleanHandlingProvider
-   *
-   * @return void
-   */
-  public function booleanHandlingProvider()
-  {
-    return [
-      [["bool_field" => "TRUE"], ["bool_field" => true]],
-      [["bool_field" => "FALSE"], ["bool_field" => false]],
-      [["bool_field" => 'true'], ["bool_field" => true]],
-      [["bool_field" => 'false'], ["bool_field" => false]],
-      [["bool_field" => true], ["bool_field" => true]],
-      [["bool_field" => false], ["bool_field" => false]],
-      [["bool_field" => 1], ["bool_field" => true]],
-      [["bool_field" => 0], ["bool_field" => false]],
+    $filter=new Filter;
+
+    $data=[
+      "true_field"=>true,
+      "false_field"=>false
     ];
+
+    $fields=[
+      "true_field"=>"bool",
+      "false_field"=>"bool"
+    ];
+
+    $this->assertEquals(
+      $this->response($data), 
+      $filter->addFields($fields)->check($data)
+    );
   }
 
   /**
-   * testStringBooleanHandling: Check that booleans are handled in the expressPay way (string of TRUE and
-   * FALSE)
+   * testStringBooleanHandling: Check booleans (string of TRUE and FALSE)
    *
    * @param  mixed $input
    * @param  mixed $output
-   * @source $this->stringBooleanHandlingProvider
    * @return void
    */
   public function testStringBooleanHandling()
   {
-    $input=["bool_field"=>"true"];
-    $output=["bool_field"=>"TRUE"];
-    $rslt = (new Filter)
-          ->addField("bool_field", "bool")
-          ->replaceRules("bool", [new Rules\Boolean("lower")])
-          ->check($input);
-    $this->assertEquals($this->response($output), $rslt);
-  }
-  
-  /**
-   * stringBooleanHandlingProvider
-   *
-   * @return void
-   */
-  public function stringBooleanHandlingProvider()
-  {
-    return [
-      [["bool_field" => "TRUE"], ["bool_field" => "TRUE"]],
-      [["bool_field" => "FALSE"], ["bool_field" => "FALSE"]],
-      [["bool_field" => 'true'], ["bool_field" => "TRUE"]],
-      [["bool_field" => 'false'], ["bool_field" => "FALSE"]],
-      [["bool_field" => true], ["bool_field" => "TRUE"]],
-      [["bool_field" => false], ["bool_field" => "FALSE"]],
-      [["bool_field" => 1], ["bool_field" => "TRUE"]],
-      [["bool_field" => 0], ["bool_field" => "FALSE"]],
+    $filter=new Filter;
+
+    $data=[
+      "true_field_lower"=>"true",
+      "false_field_lower"=>"false",
+      "true_field_upper"=>"TRUE",
+      "false_field_upper"=>"FALSE"
     ];
-  }
 
-  /**
-   * testFilterNotFoundError: Ensure that we throw an error when the user provides a filter that was not
-   * found
-   *
-   * @return void
-   */
-  public function testFilterNotFoundError()
-  {
-    $rslt = (new Filter)
-          ->addField("field", "asdf")
-          ->check(["field" => "404-not-found"]);
-    $this->assertEquals($this->response([]), $rslt);
-  }
+    $fields=[
+      "true_field_lower"=>"bool",
+      "false_field_lower"=>"bool",
+      "true_field_upper"=>"bool",
+      "false_field_upper"=>"bool"
+    ];
 
-  /**
-   * testFilterNotProvided: Checks what happens when we don't find a php filter for something
-   *
-   * @return void
-   */
-  public function testFilterNotProvided()
-  {
-    $rslt = (new Filter)->check(["field" => "404-not-found"]);
-    $this->assertEquals($this->response([]), $rslt);
+    $lowerBoolReturnType=[new Rules\Boolean("lower")];
+    $upperBoolReturnType=[new Rules\Boolean("upper")];
+
+    $rslt = $filter->addFields($fields)
+          ->replaceRules("true_field_lower", $lowerBoolReturnType)
+          ->replaceRules("false_field_lower", $lowerBoolReturnType)
+          ->replaceRules("true_field_upper", $upperBoolReturnType)
+          ->replaceRules("false_field_upper", $upperBoolReturnType)
+          ->check($data);
+
+    $this->assertEquals($this->response($data), $rslt);
   }
 
   /**
@@ -152,10 +141,15 @@ class FilterTest extends TestCase
    */
   public function testNullifyHandling()
   {
-    $rslt = (new Filter)
-          ->addField("field", "null")
-          ->check(["field" => "asdf"]);
-    $this->assertEquals($this->response([]), $rslt);
+    $filter=new Filter;
+
+    $fields=["field"=>[new Rules\Nullable]];
+    $data=["field"=>"*".$this->faker->word,"*"];
+
+    $this->assertEquals(
+      $this->response($data), 
+      $filter->addFields($fields)->check($data)
+    );
   }
 
   /**
@@ -166,8 +160,16 @@ class FilterTest extends TestCase
    */
   public function testDefaultFilterOptions()
   {
-    $rslt = (new Filter)->check(["string" => "<a>asdf</a>"]);
-    $this->assertEquals($this->response(["string" => "asdf"]), $rslt);
+    $filter=new Filter;
+    $string=$this->faker->word;
+
+    $fields=["field"=>$string];
+    $data=["field"=>"<a>".$string."</a>"];
+    
+    $this->assertEquals(
+      $this->response($fields), 
+      $filter->check($data)
+    );
   }
 
   /**
@@ -177,10 +179,17 @@ class FilterTest extends TestCase
    */
   public function testStringFilterOptions()
   {
-    $rslt = (new Filter)
-          ->addField("field", "string")
-          ->check(["field" => "<a>asdf</a>"]);
-    $this->assertEquals($this->response(["field" => "asdf"]), $rslt);
+    $filter=new Filter;
+    $string=$this->faker->word;
+
+    $fields=["field"=>"string"];
+    $data=["field"=>"<a>".$string."</a>"];
+    $assert=["field"=>$string];
+    
+    $this->assertEquals(
+      $this->response($assert), 
+      $filter->addFields($fields)->check($data)
+    );
   }
 
   /**
@@ -190,10 +199,15 @@ class FilterTest extends TestCase
    */
   public function testArrayFilterOptions()
   {
-    $rslt = (new Filter)
-          ->addField("field", "array")
-          ->check(["field" =>[1, 2, 3]]);
-    $this->assertEquals($this->response(["field" => [1, 2, 3]]), $rslt);
+    $filter=new Filter;
+
+    $fields=["field"=>"array"];
+    $data=["field"=>$this->faker->getStringArray()];
+
+    $this->assertEquals(
+      $this->response($data), 
+      $filter->addFields($fields)->check($data)
+    );
   }
 
   /**
@@ -205,11 +219,15 @@ class FilterTest extends TestCase
   public function testDefaultRequest()
   {
     global $_REQUEST;
-    $_REQUEST = ["field" => [1, 2, 3]];
-    $rslt = (new Filter)
-          ->addField("field", "array")
-          ->check();
-    $this->assertEquals($this->response(["field" => [1, 2, 3]]), $rslt);
+    $filter=new Filter;
+
+    $fields=["field"=>"array"];
+    $_REQUEST = ["field" => $this->faker->getStringArray()];
+
+    $this->assertEquals(
+      $this->response($_REQUEST),
+      $filter->addFields($fields)->check()
+    );
   }
   
   /**
@@ -219,8 +237,13 @@ class FilterTest extends TestCase
    */
   public function testEmailFilter()
   {
-    $rslt = (new Filter)->check(["email" => "test@gmail.com"]);
-    $this->assertEquals($this->response(["email" => "test@gmail.com"]), $rslt);
+    $filter=new Filter;
+    $data=["email" => $this->faker->email];
+
+    $this->assertEquals(
+      $this->response($data), 
+      $filter->check($data)
+    );
   }
   
   /**
@@ -230,8 +253,13 @@ class FilterTest extends TestCase
    */
   public function testIntFilter()
   {
-    $rslt = (new Filter)->check(["int" => 1]);
-    $this->assertEquals($this->response(["int" =>  1]), $rslt);
+    $filter=new Filter;
+    $data=["int" => 1];
+
+    $this->assertEquals(
+      $this->response($data), 
+      $filter->check($data)
+    );
   }
   
   /**
@@ -241,11 +269,99 @@ class FilterTest extends TestCase
    */
   public function testRequired()
   {
-    $rslt = (new Filter)->addField("field", [new Rules\Required])->check([]);
-    $this->assertEquals([
+    $filter=new Filter;
+    $fields=["field"=>[new Rules\Required]];
+
+    $rslt = $filter->addFields($fields)->check([]);
+    $response=[
       'status' => 2,
       'message' => 'Bad Request, kindly check and try again',
       'output' => ['field' => "Field 'field' is required"]
-    ], $rslt);
+    ];
+
+    $this->assertEquals($response, $rslt);
+  }
+
+  /**
+   * testValidationFilterSuccess
+   *
+   * @return void
+   */
+  public function testValidationFilterSuccess()
+  {
+    try
+    {
+      $filter=new Filter;
+
+      $vRules=["email"=>"required|present|email"];
+      $fields=["email"=>[new Rules\Validate($vRules),new Rules\CleanTags]];
+      $data=["email"=>$this->faker->email];
+
+      $result=$filter->addFields($fields)->check($data);
+    }
+    catch(ValidationError $e)
+    {
+      $result=$e->getMessage();
+    }
+    
+    $this->assertEquals($this->response($data), $result);
+  }
+
+  /**
+   * testValidationFilterException
+   *
+   * @return void
+   */
+  public function testValidationFilterException()
+  {
+    try
+    {
+      $filter=new Filter;
+
+      $vRules=["email"=>"required|present|email|in:jefferyosei@expresspaygh.com,ellisadigvom@expresspaygh.com"];
+      $fields=["email"=>[new Rules\Validate($vRules),new Rules\CleanTags]];
+      $data=["email"=>$this->faker->email];
+
+      $result=$filter->addFields($fields)->check($data);
+    }
+    catch(ValidationError $e)
+    {
+      $result=$e;
+    }
+
+    $this->assertIsObject($result);
+    $this->assertEquals(
+      $result->getMessage(),
+      "The Email only allows 'jefferyosei@expresspaygh.com', or 'ellisadigvom@expresspaygh.com'"
+    );
+  }
+  
+  /**
+   * testValidationCustomRules
+   *
+   * @return void
+   */
+  public function testValidationCustomRules()
+  {
+    try
+    {
+      $filter=new Filter;
+
+      $vRules=['randomObj'=>'required|object_value'];
+      $customRules=["object_value"=>new ValidationRuleObjectProvider];
+
+      $fields=["obj_field"=>[new Rules\Validate($vRules,$customRules)]];
+      $objData=new \stdClass();
+      $objData->{"hello"}="hello sir";
+      $data=["obj_field"=>$objData];
+
+      $result=$filter->addFields($fields)->check($data);
+    }
+    catch(ValidationError $e)
+    {
+      $result=$e->getMessage();
+    }
+    
+    $this->assertEquals($this->response($data), $result);
   }
 }
