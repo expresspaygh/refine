@@ -3,6 +3,7 @@
   "description": "A request filtering and sanitization package with custom validations",
   "type": "library",
   "license": "MIT",
+  "version": "1.0.0",
   "authors": [
     {
       "name": "Jeffery Osei",
@@ -16,6 +17,7 @@
   "scripts": {
     "test": "phpunit"
   },
+  "minimum-stability": "stable",
   "autoload": {
     "psr-4": {
       "Expay\\Refine\\": "src/",

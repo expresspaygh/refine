@@ -12,3 +12,8 @@
 * Add in Nullable and Validate rules
 * Bug Fixes
 * Code Cleanups
+---
+## Changes - 21/06/2020 - Jeffery Osei
+* Update composer.json
+* Add package versions and minimum stability
+* Create branch for version 1.0.0
