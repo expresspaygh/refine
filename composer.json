@@ -13,7 +13,6 @@
       "email": "ellisadigvom@expresspaygh.com"
     }
   ],
-  "minimum-stability": "stable",
   "scripts": {
     "test": "phpunit"
   },
