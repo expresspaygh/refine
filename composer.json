@@ -3,7 +3,7 @@
   "description": "A request filtering and sanitization package with custom validations",
   "type": "library",
   "license": "MIT",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "authors": [
     {
       "name": "Jeffery Osei",
