@@ -20,7 +20,7 @@ class PHPFilter extends Rule
    * @param  mixed $definition
    * @return void
    */
-  public function __construct(array $definition)
+  public function __construct($definition)
   {
     $this->definition = $definition;
   }
